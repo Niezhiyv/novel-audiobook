@@ -61,6 +61,10 @@ def find_combo_index(combo, value: str) -> int:
     raise AssertionError(f"combo item not found: {value}")
 
 
+def chapter_title_at(window: MainWindow, row: int) -> str:
+    return window.chapter_list.item(row).text().split("  [", 1)[0]
+
+
 def test_open_project_populates_three_pane_workspace(qtbot, tmp_path: Path) -> None:
     root, _ = prepare_project(tmp_path)
     window = make_window(qtbot)
@@ -69,10 +73,11 @@ def test_open_project_populates_three_pane_workspace(qtbot, tmp_path: Path) -> N
 
     assert window.windowTitle().endswith("长夜")
     assert window.chapter_list.count() == 2
-    assert [window.chapter_list.item(i).text() for i in range(2)] == [
+    assert [chapter_title_at(window, i) for i in range(2)] == [
         "第一章 开端",
         "第二章 风雪",
     ]
+    assert "待生成" in window.chapter_list.item(0).text()
     assert window.segments_table.rowCount() == 6
     assert window.segments_table.columnCount() == 4
     assert window.roles_table.rowCount() == 3
@@ -127,11 +132,11 @@ def test_chapter_rename_split_and_merge_refresh_lists(qtbot, tmp_path: Path) -> 
     window.chapter_list.setCurrentRow(1)
 
     window.rename_selected_chapter("风雪夜")
-    assert window.chapter_list.item(1).text() == "风雪夜"
+    assert chapter_title_at(window, 1) == "风雪夜"
 
     window.split_selected_chapter(offset=1, new_title="追兵")
     assert window.chapter_list.count() == 3
-    assert [window.chapter_list.item(i).text() for i in range(3)] == [
+    assert [chapter_title_at(window, i) for i in range(3)] == [
         "第一章 开端",
         "风雪夜",
         "追兵",
@@ -146,7 +151,7 @@ def test_chapter_rename_split_and_merge_refresh_lists(qtbot, tmp_path: Path) -> 
     window.merge_selected_chapters("风雪重逢")
 
     assert window.chapter_list.count() == 2
-    assert window.chapter_list.item(1).text() == "风雪重逢"
+    assert chapter_title_at(window, 1) == "风雪重逢"
 
 
 def test_role_alias_editor_merges_aliases(qtbot, tmp_path: Path) -> None:
@@ -166,6 +171,29 @@ def test_role_alias_editor_merges_aliases(qtbot, tmp_path: Path) -> None:
     workspace = window.project_service.fetch_workspace()
     lin = next(role for role in workspace.roles if role.id == role_ids["林舟"])
     assert lin.aliases == ["林师兄", "阿舟"]
+
+
+def test_role_name_editor_renames_selected_role(qtbot, tmp_path: Path) -> None:
+    root, role_ids = prepare_project(tmp_path)
+    window = make_window(qtbot)
+    window.open_project(root)
+    lin_row = next(
+        row
+        for row in range(window.roles_table.rowCount())
+        if window.roles_table.item(row, 0).text() == "林舟"
+    )
+    window.roles_table.setCurrentCell(lin_row, 0)
+
+    window.role_name_input.setText("林舟舟")
+    window.rename_role_button.click()
+
+    workspace = window.project_service.fetch_workspace()
+    renamed = next(role for role in workspace.roles if role.id == role_ids["林舟"])
+    assert renamed.name == "林舟舟"
+    assert any(
+        window.roles_table.item(row, 0).text() == "林舟舟"
+        for row in range(window.roles_table.rowCount())
+    )
 
 
 def test_generate_chapter_uses_background_worker(qtbot, tmp_path: Path) -> None:
@@ -196,5 +224,5 @@ def test_reopened_project_restores_chapter_and_filter(qtbot, tmp_path: Path) -> 
 
     current = second.chapter_list.currentItem()
     assert current is not None
-    assert current.text() == "第二章 风雪"
+    assert current.text().startswith("第二章 风雪")
     assert second.filter_input.text() == "对白"

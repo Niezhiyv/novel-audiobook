@@ -255,26 +255,43 @@ class ProjectRepository:
     def save_role(self, role: Role) -> None:
         aliases = json.dumps(role.aliases, ensure_ascii=False)
         with self.connection:
-            row = self.connection.execute(
-                """
-                INSERT INTO roles (name, aliases_json, voice_id, speed, is_narrator)
-                VALUES (?, ?, ?, ?, ?)
-                ON CONFLICT(name) DO UPDATE SET
-                    aliases_json = excluded.aliases_json,
-                    voice_id = excluded.voice_id,
-                    speed = excluded.speed,
-                    is_narrator = excluded.is_narrator
-                RETURNING id
-                """,
-                (
-                    role.name,
-                    aliases,
-                    role.voice_id,
-                    role.speed,
-                    int(role.is_narrator),
-                ),
-            ).fetchone()
-        role.id = int(row["id"])
+            if role.id == 0:
+                row = self.connection.execute(
+                    """
+                    INSERT INTO roles (name, aliases_json, voice_id, speed, is_narrator)
+                    VALUES (?, ?, ?, ?, ?)
+                    ON CONFLICT(name) DO UPDATE SET
+                        aliases_json = excluded.aliases_json,
+                        voice_id = excluded.voice_id,
+                        speed = excluded.speed,
+                        is_narrator = excluded.is_narrator
+                    RETURNING id
+                    """,
+                    (
+                        role.name,
+                        aliases,
+                        role.voice_id,
+                        role.speed,
+                        int(role.is_narrator),
+                    ),
+                ).fetchone()
+                role.id = int(row["id"])
+            else:
+                self.connection.execute(
+                    """
+                    UPDATE roles
+                    SET name = ?, aliases_json = ?, voice_id = ?, speed = ?, is_narrator = ?
+                    WHERE id = ?
+                    """,
+                    (
+                        role.name,
+                        aliases,
+                        role.voice_id,
+                        role.speed,
+                        int(role.is_narrator),
+                        role.id,
+                    ),
+                )
 
     def load_roles(self) -> list[Role]:
         rows = self.connection.execute(

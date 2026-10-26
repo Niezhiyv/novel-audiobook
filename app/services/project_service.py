@@ -144,6 +144,21 @@ class ProjectService:
                 )
         return target
 
+    def rename_role(self, role_id: int, name: str) -> Role:
+        canonical = name.strip()
+        if not canonical:
+            raise ValueError("角色名称不能为空")
+        roles = self.repository.load_roles()
+        role = next((item for item in roles if item.id == role_id), None)
+        if role is None:
+            raise ValueError(f"角色不存在: {role_id}")
+        if any(item.id != role_id and item.name == canonical for item in roles):
+            raise ValueError(f"角色名称已存在: {canonical}")
+        role.name = canonical
+        role.aliases = [alias for alias in role.aliases if alias != canonical]
+        self.repository.save_role(role)
+        return role
+
     def assign_voice(self, role_id: int, voice_id: str | None, speed: float) -> None:
         if speed <= 0:
             raise ValueError("语速必须大于 0")

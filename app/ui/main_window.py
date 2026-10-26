@@ -156,6 +156,9 @@ class MainWindow(QMainWindow):
         role_header.setSectionResizeMode(2, QHeaderView.ResizeMode.ResizeToContents)
         self.roles_table.itemSelectionChanged.connect(self._sync_role_controls)
         self.voice_combo = QComboBox(self)
+        self.role_name_input = QLineEdit(self)
+        self.role_name_input.setPlaceholderText("角色名称")
+        self.rename_role_button = QPushButton("重命名角色", self)
         self.alias_input = QLineEdit(self)
         self.alias_input.setPlaceholderText("别名，用顿号或逗号分隔")
         self.merge_aliases_button = QPushButton("合并别名", self)
@@ -174,6 +177,8 @@ class MainWindow(QMainWindow):
         right_layout = QVBoxLayout()
         right_layout.addWidget(QLabel("角色与音色", self))
         right_layout.addWidget(self.roles_table, 1)
+        right_layout.addWidget(self.role_name_input)
+        right_layout.addWidget(self.rename_role_button)
         right_layout.addWidget(self.alias_input)
         right_layout.addWidget(self.merge_aliases_button)
         right_layout.addWidget(self.voice_combo)
@@ -201,6 +206,7 @@ class MainWindow(QMainWindow):
         self.split_button.clicked.connect(self.prompt_split_chapter)
         self.merge_button.clicked.connect(self.prompt_merge_chapters)
         self.apply_speaker_button.clicked.connect(self.apply_speaker_to_selection)
+        self.rename_role_button.clicked.connect(self.rename_selected_role)
         self.merge_aliases_button.clicked.connect(self.merge_selected_role_aliases)
         self.apply_voice_button.clicked.connect(self.apply_selected_voice)
         self.preview_button.clicked.connect(self.preview_selected_role)
@@ -331,6 +337,13 @@ class MainWindow(QMainWindow):
         merged = self.project_service.create_or_merge_role(role.name, aliases)
         self._refresh_workspace(self.current_chapter_id(), preserve_role_id=merged.id)
 
+    def rename_selected_role(self) -> None:
+        role_id = self._selected_role_id()
+        if role_id is None:
+            return
+        renamed = self.project_service.rename_role(role_id, self.role_name_input.text())
+        self._refresh_workspace(self.current_chapter_id(), preserve_role_id=renamed.id)
+
     def preview_selected_role(self) -> None:
         role_id = self._selected_role_id()
         if role_id is None or self._workspace is None:
@@ -436,6 +449,7 @@ class MainWindow(QMainWindow):
             self.generation_worker.cancel()
             self.generation_worker.wait(5_000)
         self.project_service.close()
+        self._workspace = None
         super().closeEvent(event)
 
     def _start_generation(self, chapter_ids: Sequence[int]) -> None:
@@ -532,7 +546,13 @@ class MainWindow(QMainWindow):
         self.chapter_list.blockSignals(True)
         self.chapter_list.clear()
         for chapter in self._workspace.chapters:
-            item = QListWidgetItem(chapter.title, self.chapter_list)
+            status_label = {
+                "pending": "待生成",
+                "running": "生成中",
+                "completed": "已完成",
+                "failed": "生成失败",
+            }.get(chapter.status.value, chapter.status.value)
+            item = QListWidgetItem(f"{chapter.title}  [{status_label}]", self.chapter_list)
             item.setData(Qt.ItemDataRole.UserRole, chapter.id)
             item.setToolTip(f"状态：{chapter.status.value}")
         self.chapter_list.blockSignals(False)
@@ -607,6 +627,7 @@ class MainWindow(QMainWindow):
         target = self.voice_combo.findData(role.voice_id)
         self.voice_combo.setCurrentIndex(max(0, target))
         self.speed_input.setValue(role.speed)
+        self.role_name_input.setText(role.name)
         self.alias_input.setText("、".join(role.aliases))
 
     def _selected_role_id(self) -> int | None:
@@ -645,6 +666,8 @@ class MainWindow(QMainWindow):
             self.speaker_combo,
             self.apply_speaker_button,
             self.roles_table,
+            self.role_name_input,
+            self.rename_role_button,
             self.alias_input,
             self.merge_aliases_button,
             self.voice_combo,
