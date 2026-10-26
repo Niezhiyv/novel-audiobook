@@ -2,15 +2,14 @@ from __future__ import annotations
 
 import sys
 
-from PySide6.QtWidgets import QApplication, QLabel, QMainWindow
+from PySide6.QtWidgets import QApplication
+
+from app.ui.main_window import MainWindow
 
 
 def main() -> int:
     application = QApplication.instance() or QApplication(sys.argv)
-    window = QMainWindow()
-    window.setWindowTitle("离线多人有声小说")
-    window.setCentralWidget(QLabel("小说转听书工具", parent=window))
-    window.resize(960, 640)
+    window = MainWindow()
     window.show()
     return application.exec()
 

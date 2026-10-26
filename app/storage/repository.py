@@ -295,6 +295,21 @@ class ProjectRepository:
             for row in rows
         ]
 
+    def save_view_state(self, last_chapter_id: int | None, last_filter: str) -> None:
+        now = datetime.now(UTC).isoformat()
+        with self.connection:
+            self.connection.execute(
+                """
+                UPDATE projects
+                SET last_chapter_id = ?, last_filter = ?, updated_at = ?
+                WHERE id = 1
+                """,
+                (last_chapter_id, last_filter, now),
+            )
+        self.project.last_chapter_id = last_chapter_id
+        self.project.last_filter = last_filter
+        self.project.updated_at = now
+
     def close(self) -> None:
         if self._connection is not None:
             self._connection.close()

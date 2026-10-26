@@ -155,6 +155,13 @@ class ProjectService:
         role.speed = speed
         self.repository.save_role(role)
 
+    def save_view_state(
+        self,
+        last_chapter_id: int | None,
+        last_filter: str,
+    ) -> None:
+        self.repository.save_view_state(last_chapter_id, last_filter)
+
     def rename_chapter(self, chapter_id: int, title: str) -> None:
         if not title.strip():
             raise ValueError("章节标题不能为空")
