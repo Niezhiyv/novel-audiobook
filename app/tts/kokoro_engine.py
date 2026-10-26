@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import os
+import shutil
+import tempfile
 from collections.abc import Mapping
 from pathlib import Path
 from typing import Any
@@ -11,6 +14,36 @@ from app.tts.base import AudioClip
 
 class KokoroConfigurationError(RuntimeError):
     pass
+
+
+def prepare_espeak_config(cache_root: Path | None = None) -> Any:
+    import espeakng_loader
+    from kokoro_onnx.config import EspeakConfig
+
+    source = Path(espeakng_loader.get_data_path()).resolve()
+    target = Path(cache_root) if cache_root is not None else _default_espeak_cache()
+    target = target.resolve()
+    if not target.as_posix().isascii():
+        target = Path("C:/Users/Public/NovelAudiobook/espeak-ng-data")
+    if source != target and not (target / "phontab").is_file():
+        target.parent.mkdir(parents=True, exist_ok=True)
+        temporary = target.parent / f".{target.name}.{os.getpid()}.tmp"
+        shutil.rmtree(temporary, ignore_errors=True)
+        shutil.copytree(source, temporary)
+        if target.exists():
+            shutil.rmtree(target)
+        os.replace(temporary, target)
+    return EspeakConfig(
+        lib_path=espeakng_loader.get_library_path(),
+        data_path=str(target),
+    )
+
+
+def _default_espeak_cache() -> Path:
+    temp_path = Path(tempfile.gettempdir()) / "novel-audiobook" / "espeak-ng-data"
+    if temp_path.as_posix().isascii():
+        return temp_path
+    return Path("C:/Users/Public/NovelAudiobook/espeak-ng-data")
 
 
 class KokoroTTSEngine:
@@ -50,6 +83,7 @@ class KokoroTTSEngine:
             self._kokoro = Kokoro(
                 str(self.model_path),
                 str(self.voices_path),
+                espeak_config=prepare_espeak_config(),
                 vocab_config=str(self.vocab_path) if self.vocab_path else None,
             )
         except Exception as error:

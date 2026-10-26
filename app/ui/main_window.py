@@ -5,12 +5,14 @@ from collections.abc import Mapping, Sequence
 from pathlib import Path
 
 from PySide6.QtCore import QUrl, Qt
+from PySide6.QtGui import QFont
 from PySide6.QtMultimedia import QAudioOutput, QMediaPlayer
 from PySide6.QtWidgets import (
     QAbstractItemView,
     QDialog,
     QFileDialog,
     QHBoxLayout,
+    QHeaderView,
     QInputDialog,
     QLabel,
     QLineEdit,
@@ -34,7 +36,7 @@ from app.services.generation_service import GenerationProgress, GenerationServic
 from app.services.project_service import ProjectService, ProjectWorkspace
 from app.tts.base import TTSEngine
 from app.tts.cache import AudioCache
-from app.tts.fake_engine import FakeTTSEngine
+from app.tts.config import KOKORO_MODEL_VERSION, VOICE_LABELS, build_default_engine
 from app.ui.models import (
     SEGMENT_HEADERS,
     role_name,
@@ -44,16 +46,6 @@ from app.ui.models import (
 from app.ui.project_dialog import ProjectDialog
 from app.workers.generation_worker import GenerationWorker
 
-DEFAULT_VOICE_OPTIONS = {
-    "zf_xiaobei": "小北 · 中文女声",
-    "zf_xiaoni": "小妮 · 中文女声",
-    "zf_xiaoxiao": "小小 · 中文女声",
-    "zf_xiaoyi": "小艺 · 中文女声",
-    "zm_yunjian": "云健 · 中文男声",
-    "zm_yunxi": "云希 · 中文男声",
-}
-
-
 class MainWindow(QMainWindow):
     def __init__(
         self,
@@ -61,13 +53,13 @@ class MainWindow(QMainWindow):
         project_service: ProjectService | None = None,
         engine: TTSEngine | None = None,
         voice_options: Mapping[str, str] | None = None,
-        model_version: str = "kokoro-v1.1-zh",
+        model_version: str = KOKORO_MODEL_VERSION,
         parent: QWidget | None = None,
     ) -> None:
         super().__init__(parent)
         self.project_service = project_service or ProjectService()
-        self.engine = engine or FakeTTSEngine()
-        self.voice_options = dict(voice_options or DEFAULT_VOICE_OPTIONS)
+        self.engine = engine or build_default_engine()
+        self.voice_options = dict(voice_options or VOICE_LABELS)
         self.model_version = model_version
         self._workspace: ProjectWorkspace | None = None
         self._loading = False
@@ -77,6 +69,7 @@ class MainWindow(QMainWindow):
         self.generation_worker: GenerationWorker | None = None
 
         self.setWindowTitle("离线多人有声小说")
+        self.setFont(QFont("Microsoft YaHei UI", 10))
         self.resize(1380, 820)
         self._build_ui()
         self._set_project_actions_enabled(False)
@@ -127,6 +120,11 @@ class MainWindow(QMainWindow):
             QAbstractItemView.SelectionMode.ExtendedSelection
         )
         self.segments_table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
+        segment_header = self.segments_table.horizontalHeader()
+        segment_header.setSectionResizeMode(0, QHeaderView.ResizeMode.ResizeToContents)
+        segment_header.setSectionResizeMode(1, QHeaderView.ResizeMode.ResizeToContents)
+        segment_header.setSectionResizeMode(2, QHeaderView.ResizeMode.Stretch)
+        segment_header.setSectionResizeMode(3, QHeaderView.ResizeMode.ResizeToContents)
         self.speaker_combo = QComboBox(self)
         self.apply_speaker_button = QPushButton("应用到所选片段", self)
 
@@ -152,6 +150,10 @@ class MainWindow(QMainWindow):
             QAbstractItemView.SelectionMode.SingleSelection
         )
         self.roles_table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
+        role_header = self.roles_table.horizontalHeader()
+        role_header.setSectionResizeMode(0, QHeaderView.ResizeMode.ResizeToContents)
+        role_header.setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)
+        role_header.setSectionResizeMode(2, QHeaderView.ResizeMode.ResizeToContents)
         self.roles_table.itemSelectionChanged.connect(self._sync_role_controls)
         self.voice_combo = QComboBox(self)
         self.alias_input = QLineEdit(self)
@@ -590,7 +592,6 @@ class MainWindow(QMainWindow):
                 3,
                 QTableWidgetItem(f"{segment.confidence:.0%}"),
             )
-        self.segments_table.resizeColumnsToContents()
 
     def _sync_role_controls(self) -> None:
         role_id = self._selected_role_id()
