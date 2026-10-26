@@ -3,8 +3,10 @@ from __future__ import annotations
 import os
 import re
 import subprocess
+import threading
 import uuid
 from collections.abc import Mapping, Sequence
+from collections.abc import Callable
 from pathlib import Path
 
 import imageio_ffmpeg
@@ -17,6 +19,10 @@ from app.tts.cache import AudioCache, chunk_text
 
 
 class MissingVoiceError(ValueError):
+    pass
+
+
+class AssemblyCancelled(RuntimeError):
     pass
 
 
@@ -40,6 +46,9 @@ class ChapterAssembler:
         segments: Sequence[Segment],
         roles: Mapping[int, Role],
         output_dir: Path,
+        *,
+        cancel_event: threading.Event | None = None,
+        on_segment_completed: Callable[[int, int], None] | None = None,
     ) -> list[Path]:
         output_dir = Path(output_dir)
         output_dir.mkdir(parents=True, exist_ok=True)
@@ -51,7 +60,12 @@ class ChapterAssembler:
             )
             if not chapter_segments:
                 raise ValueError(f"章节没有可生成的片段: {chapter.title}")
-            samples, sample_rate = self._render_chapter_samples(chapter_segments, roles)
+            samples, sample_rate = self._render_chapter_samples(
+                chapter_segments,
+                roles,
+                cancel_event=cancel_event,
+                on_segment_completed=on_segment_completed,
+            )
             path = output_dir / _output_filename(chapter)
             self._encode_mp3(samples, sample_rate, path)
             chapter.status = ChapterStatus.COMPLETED
@@ -64,10 +78,16 @@ class ChapterAssembler:
         self,
         segments: Sequence[Segment],
         roles: Mapping[int, Role],
+        *,
+        cancel_event: threading.Event | None,
+        on_segment_completed: Callable[[int, int], None] | None,
     ) -> tuple[np.ndarray, int]:
         pieces: list[np.ndarray] = []
         sample_rate: int | None = None
+        total_segments = len(segments)
         for segment_index, segment in enumerate(segments):
+            if cancel_event is not None and cancel_event.is_set():
+                raise AssemblyCancelled("生成已取消")
             role = roles.get(segment.role_id) if segment.role_id is not None else None
             if role is None:
                 raise MissingVoiceError(f"片段没有分配角色: {segment.text[:20]}")
@@ -93,9 +113,13 @@ class ChapterAssembler:
                 pieces.append(np.asarray(clip, dtype=np.float32))
             if segment_index + 1 < len(segments):
                 pieces.append(self._pause(sample_rate))
+            if on_segment_completed is not None:
+                on_segment_completed(segment_index + 1, total_segments)
 
         if not pieces or sample_rate is None:
             raise ValueError("章节没有可拼接的音频")
+        if cancel_event is not None and cancel_event.is_set():
+            raise AssemblyCancelled("生成已取消")
         return np.concatenate(pieces), sample_rate
 
     def _pause(self, sample_rate: int) -> np.ndarray:

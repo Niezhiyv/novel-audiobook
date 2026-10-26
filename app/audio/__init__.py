@@ -1,4 +1,4 @@
-from app.audio.assembler import ChapterAssembler, MissingVoiceError
+from app.audio.assembler import AssemblyCancelled, ChapterAssembler, MissingVoiceError
 
-__all__ = ["ChapterAssembler", "MissingVoiceError"]
+__all__ = ["AssemblyCancelled", "ChapterAssembler", "MissingVoiceError"]
 
