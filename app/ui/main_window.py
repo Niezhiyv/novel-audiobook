@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import logging
-from collections.abc import Mapping, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from pathlib import Path
 
 from PySide6.QtCore import QUrl, Qt
@@ -201,15 +201,33 @@ class MainWindow(QMainWindow):
         self.generate_button.clicked.connect(self.start_selected_generation)
         self.generate_all_button.clicked.connect(self.start_full_generation)
         self.cancel_button.clicked.connect(self.cancel_generation)
-        self.retry_button.clicked.connect(self.retry_failed_chapter)
-        self.rename_button.clicked.connect(self.prompt_rename_chapter)
-        self.split_button.clicked.connect(self.prompt_split_chapter)
-        self.merge_button.clicked.connect(self.prompt_merge_chapters)
-        self.apply_speaker_button.clicked.connect(self.apply_speaker_to_selection)
-        self.rename_role_button.clicked.connect(self.rename_selected_role)
-        self.merge_aliases_button.clicked.connect(self.merge_selected_role_aliases)
-        self.apply_voice_button.clicked.connect(self.apply_selected_voice)
-        self.preview_button.clicked.connect(self.preview_selected_role)
+        self.retry_button.clicked.connect(
+            lambda: self._run_action("重试章节", self.retry_failed_chapter)
+        )
+        self.rename_button.clicked.connect(
+            lambda: self._run_action("章节改名", self.prompt_rename_chapter)
+        )
+        self.split_button.clicked.connect(
+            lambda: self._run_action("拆分章节", self.prompt_split_chapter)
+        )
+        self.merge_button.clicked.connect(
+            lambda: self._run_action("合并章节", self.prompt_merge_chapters)
+        )
+        self.apply_speaker_button.clicked.connect(
+            lambda: self._run_action("修改说话人", self.apply_speaker_to_selection)
+        )
+        self.rename_role_button.clicked.connect(
+            lambda: self._run_action("重命名角色", self.rename_selected_role)
+        )
+        self.merge_aliases_button.clicked.connect(
+            lambda: self._run_action("合并角色别名", self.merge_selected_role_aliases)
+        )
+        self.apply_voice_button.clicked.connect(
+            lambda: self._run_action("应用音色", self.apply_selected_voice)
+        )
+        self.preview_button.clicked.connect(
+            lambda: self._run_action("短句试听", self.preview_selected_role)
+        )
 
     def open_project(self, root: Path) -> None:
         try:
@@ -460,6 +478,13 @@ class MainWindow(QMainWindow):
         self.progress_bar.setRange(0, 0)
         self.progress_label.setText("正在准备生成…")
         self.generation_worker.start_generation(chapter_ids)
+
+    def _run_action(self, label: str, action: Callable[[], None]) -> None:
+        try:
+            action()
+        except Exception as error:
+            self._project_logger.exception("%s失败", label)
+            QMessageBox.warning(self, f"{label}失败", str(error))
 
     def _replace_generation_worker(self) -> None:
         if self.generation_worker is not None:

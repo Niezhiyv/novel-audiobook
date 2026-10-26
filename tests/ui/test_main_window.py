@@ -1,7 +1,7 @@
 from pathlib import Path
 
 from PySide6.QtCore import QItemSelectionModel, Qt
-from PySide6.QtWidgets import QAbstractItemView
+from PySide6.QtWidgets import QAbstractItemView, QMessageBox
 
 from app.domain.models import ChapterStatus
 from app.services.project_service import ProjectService
@@ -194,6 +194,36 @@ def test_role_name_editor_renames_selected_role(qtbot, tmp_path: Path) -> None:
         window.roles_table.item(row, 0).text() == "林舟舟"
         for row in range(window.roles_table.rowCount())
     )
+
+
+def test_invalid_role_rename_shows_actionable_warning(
+    qtbot,
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    root, _ = prepare_project(tmp_path)
+    window = make_window(qtbot)
+    window.open_project(root)
+    lin_row = next(
+        row
+        for row in range(window.roles_table.rowCount())
+        if window.roles_table.item(row, 0).text() == "林舟"
+    )
+    window.roles_table.setCurrentCell(lin_row, 0)
+    warnings: list[tuple[str, str]] = []
+    monkeypatch.setattr(
+        QMessageBox,
+        "warning",
+        lambda parent, title, message: warnings.append((title, message)),
+    )
+
+    window.role_name_input.setText("沈月")
+    window.rename_role_button.click()
+
+    assert warnings
+    assert "已存在" in warnings[0][1]
+    workspace = window.project_service.fetch_workspace()
+    assert any(role.name == "林舟" for role in workspace.roles)
 
 
 def test_generate_chapter_uses_background_worker(qtbot, tmp_path: Path) -> None:
