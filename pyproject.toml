@@ -1,0 +1,36 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "novel-audiobook"
+version = "0.1.0"
+description = "离线中文多人有声小说桌面工具"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "charset-normalizer>=3.3,<4",
+    "imageio-ffmpeg>=0.6,<0.7",
+    "kokoro-onnx>=0.4,<0.5",
+    "numpy>=2.0,<3",
+    "PySide6>=6.8,<7",
+    "soundfile>=0.12,<0.14",
+]
+
+[project.gui-scripts]
+audiobook = "app.__main__:main"
+
+[dependency-groups]
+dev = [
+    "mutagen>=1.47,<2",
+    "pytest>=8,<10",
+    "pytest-qt>=4.4,<5",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["app"]
+
+[tool.pytest.ini_options]
+addopts = "-ra"
+testpaths = ["tests"]
+pythonpath = ["."]
+

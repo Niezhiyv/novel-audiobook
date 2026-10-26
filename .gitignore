@@ -1,0 +1,14 @@
+.superpowers/
+.uv-cache/
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.coverage
+htmlcov/
+models/
+projects/
+exports/
+logs/
+*.wav
+*.mp3
