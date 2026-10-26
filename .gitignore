@@ -12,3 +12,8 @@ exports/
 logs/
 *.wav
 *.mp3
+build/
+build-debug/
+dist/
+*.exe
+*.spec

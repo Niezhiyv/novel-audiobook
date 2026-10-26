@@ -3,9 +3,10 @@ from __future__ import annotations
 import os
 from pathlib import Path
 
+from app.paths import application_root
 from app.tts.kokoro_engine import KokoroTTSEngine
 
-REPOSITORY_ROOT = Path(__file__).resolve().parents[2]
+REPOSITORY_ROOT = application_root()
 DEFAULT_MODEL_DIR = REPOSITORY_ROOT / "models" / "kokoro"
 
 DEFAULT_VOICES = {

@@ -2,6 +2,18 @@
 
 Windows 本地桌面工具：导入中文 TXT，识别章节和说话人，人工校正角色归属，并使用本地 Kokoro 中文音色生成分章 MP3。小说文本、模型推理和音频处理都不依赖云端服务。
 
+## 直接运行
+
+双击项目根目录中的：
+
+```text
+启动小说转听书.cmd
+```
+
+也可以直接双击 `小说转听书.exe`。首次启动单文件程序需要解压内置运行环境，可能等待数秒。
+
+模型固定在项目的 `models/kokoro/`，演示项目位于 `projects/demo-real-tts/`。
+
 ## 当前功能
 
 - 导入 UTF-8、GB18030/GBK、UTF-16 TXT。
@@ -32,8 +44,18 @@ uv sync --all-groups
 
 ## 启动
 
+源码模式：
+
 ```powershell
 uv run python -m app
+```
+
+如果不需要重新打包，直接使用根目录的 `小说转听书.exe` 即可。
+
+重新生成 Windows 单文件程序：
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts\build_windows.ps1
 ```
 
 示例文本位于 `examples/sample-novel.txt`。
