@@ -24,4 +24,3 @@ class FakeTTSEngine:
         phase = digest[1] / 255.0 * 2.0 * np.pi
         samples = 0.08 * np.sin(2.0 * np.pi * frequency * timeline + phase)
         return AudioClip(samples.astype(np.float32), self.sample_rate)
-

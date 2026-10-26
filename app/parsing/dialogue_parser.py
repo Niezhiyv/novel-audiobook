@@ -62,4 +62,3 @@ def split_segments(text: str) -> list[ParsedSegment]:
         if line.strip():
             result.extend(_split_paragraph(line))
     return result
-

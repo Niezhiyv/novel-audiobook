@@ -24,4 +24,3 @@ class AudioClip:
 class TTSEngine(Protocol):
     def synthesize(self, text: str, voice_id: str, speed: float) -> AudioClip:
         ...
-

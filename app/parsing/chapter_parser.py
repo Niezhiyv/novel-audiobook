@@ -66,4 +66,3 @@ def split_chapters(text: str) -> list[ParsedChapter]:
             )
         )
     return chapters
-

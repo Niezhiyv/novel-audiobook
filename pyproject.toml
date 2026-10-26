@@ -33,4 +33,3 @@ packages = ["app"]
 addopts = "-ra"
 testpaths = ["tests"]
 pythonpath = ["."]
-

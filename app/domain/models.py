@@ -59,4 +59,3 @@ class Role:
     speed: float = 1.0
     is_narrator: bool = False
     id: int = 0
-

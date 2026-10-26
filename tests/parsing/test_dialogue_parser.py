@@ -73,4 +73,3 @@ def test_split_segments_keeps_unclosed_quote_as_narration() -> None:
             evidence=None,
         )
     ]
-

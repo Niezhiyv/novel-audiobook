@@ -70,4 +70,3 @@ uv run python scripts/check_kokoro.py
 3. 断开网络。
 4. 执行 `uv run python -m app`。
 5. 使用 `examples/sample-novel.txt` 创建项目，分配音色并生成章节 MP3。
-

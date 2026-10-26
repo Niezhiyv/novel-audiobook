@@ -22,4 +22,3 @@ def test_fake_engine_uses_different_waveforms_for_different_voices() -> None:
     second = engine.synthesize("同一句话。", "voice-b", 1.0)
 
     assert not np.array_equal(first.samples, second.samples)
-

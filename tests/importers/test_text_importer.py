@@ -45,4 +45,3 @@ def test_decode_txt_rejects_undecodable_content(tmp_path: Path) -> None:
 
     with pytest.raises(TextImportError, match="无法识别"):
         decode_txt(path)
-

@@ -36,4 +36,3 @@ def test_split_chapters_wraps_text_without_headings() -> None:
 
 def test_split_chapters_returns_empty_list_for_empty_text() -> None:
     assert split_chapters(" \n\t ") == []
-

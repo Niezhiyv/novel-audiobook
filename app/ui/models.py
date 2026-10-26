@@ -32,4 +32,3 @@ def segment_matches_filter(
         ]
     ).casefold()
     return needle in searchable
-

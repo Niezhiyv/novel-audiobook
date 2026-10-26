@@ -57,4 +57,3 @@ def decode_txt(path: Path) -> str:
                 return normalized
 
     raise TextImportError(f"无法识别文本编码: {source}")
-

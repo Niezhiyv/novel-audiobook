@@ -54,4 +54,3 @@ def test_chunk_text_hard_splits_when_no_punctuation_exists() -> None:
 
     assert all(len(chunk) <= 15 for chunk in chunks)
     assert "".join(chunks) == text
-

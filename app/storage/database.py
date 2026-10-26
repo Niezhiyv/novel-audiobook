@@ -92,4 +92,3 @@ def open_and_migrate_database(path: Path) -> sqlite3.Connection:
             connection.executescript(SCHEMA_V1)
             connection.execute(f"PRAGMA user_version = {CURRENT_SCHEMA_VERSION}")
     return connection
-
