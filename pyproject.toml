@@ -6,6 +6,22 @@ build-backend = "hatchling.build"
 name = "novel-audiobook"
 version = "0.1.0"
 description = "离线中文多人有声小说桌面工具"
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [
+    { name = "Niezhiyv" },
+]
+keywords = ["audiobook", "chinese", "kokoro", "offline", "tts"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Environment :: Win32 (MS Windows)",
+    "Intended Audience :: End Users/Desktop",
+    "Natural Language :: Chinese (Simplified)",
+    "Operating System :: Microsoft :: Windows",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Multimedia :: Sound/Audio :: Speech",
+]
 requires-python = ">=3.12,<3.13"
 dependencies = [
     "charset-normalizer>=3.3,<4",
@@ -15,6 +31,10 @@ dependencies = [
     "PySide6>=6.8,<7",
     "soundfile>=0.12,<0.14",
 ]
+
+[project.urls]
+Repository = "https://github.com/Niezhiyv/novel-audiobook"
+Issues = "https://github.com/Niezhiyv/novel-audiobook/issues"
 
 [project.gui-scripts]
 audiobook = "app.__main__:main"
